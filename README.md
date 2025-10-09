@@ -1,5 +1,4 @@
-# Hand-Gesture-Control-System
-🖐️ Hand Gesture Control System
+#🖐️ Hand Gesture Control System
 This project leverages OpenCV and MediaPipe to build a real-time hand gesture recognition system that enables users to control core computer operations using intuitive hand movements. Designed with accessibility and multimodal interaction in mind, the system translates hand gestures into actions such as:
 
 🖱️ Cursor movement
