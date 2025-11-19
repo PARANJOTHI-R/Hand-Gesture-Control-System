@@ -4,7 +4,7 @@ import Handtracking as htm
 import time
 import pyautogui
 
-# 🔇 Audio control setup for mute/unmute
+#Audio control setup for mute/unmute
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
@@ -17,29 +17,30 @@ isMuted = False
 muteCooldown = 1.0
 lastMuteTime = 0
 
-##########################
 wCam, hCam = 640, 480
 frameR = 50
 smoothening = 5
-sensitivity = 2.0   # 👈 Increased sensitivity for faster cursor response
+sensitivity = 2.0
 clickCooldown = 0.4
 lastClickTime = 0
 scrollCooldown = 0.0000001
 lastScrollTime = 0
 scrollSpeed = 85
-alpha = 0.65      # 👈 Increased alpha for less laggy smoothing (more responsive)
-deadzone = 2        # 👈 Reduced deadzone to react to smaller movements
-#########################
-#########################
+alpha = 0.65
+deadzone = 2
 
 pTime = 0
 plocX, plocY = 0, 0
 clocX, clocY = 0, 0
 
 cap = cv2.VideoCapture(0)
-cap.set(3, wCam)
-cap.set(4, hCam)
+
+# ✅ Set resolution and FPS immediately after opening the camera
+wCam, hCam = 1280, 720   # Try HD first
+cap.set(3, wCam)         # Width
+cap.set(4, hCam)         # Height
 cap.set(cv2.CAP_PROP_FPS, 60)
+
 
 detector = htm.handDetector(maxHands=1)
 wScr, hScr = pyautogui.size()
@@ -58,22 +59,19 @@ while True:
 
         currentTime = time.time()
 
-        # 1. 🔇 Audio Control (Mute/Unmute)
-        # 🔊 Gesture: Hand Open → Unmute
+        # 1.  Audio Control (Mute/Unmute)
         if fingers == [1, 1, 1, 1, 1] and isMuted and currentTime - lastMuteTime > muteCooldown:
             volume.SetMute(0, None)
             isMuted = False
             lastMuteTime = currentTime
             cv2.putText(img, "🔊 Unmuted", (450, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-
-        # 🔇 Gesture: Hand Closed → Mute
         elif fingers == [0, 0, 0, 0, 0] and not isMuted and currentTime - lastMuteTime > muteCooldown:
             volume.SetMute(1, None)
             isMuted = True
             lastMuteTime = currentTime
             cv2.putText(img, "🔇 Muted", (450, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
 
-        # --- SCROLL FUNCTIONALITY ---
+        # 2.Scroll
         elif currentTime - lastScrollTime > scrollCooldown:
 
             # 📜 Scroll UP Gesture: Index, Middle, Ring UP (0, 1, 1, 1, 0)
@@ -88,10 +86,6 @@ while True:
                 lastScrollTime = currentTime
                 cv2.putText(img, "⬇️ Scroll DOWN", (400, 450), cv2.FONT_HERSHEY_PLAIN, 2, (255, 165, 0), 3)
 
-        # 2. 🖱️ Mouse Movement: Index finger up
-        # Only process movement if we are not in a scrolling state (handled by 'elif' above)
-        # The movement check needs to ensure the ring/pinky aren't accidentally up,
-        # but your original code only checks fingers[1] and fingers[2]. Let's stick to that.
         if fingers[1] == 1 and fingers[2] == 0 and fingers[3] == 0 and fingers[4] == 0:
 
             x3 = np.interp(x1, (frameR, wCam - frameR), (0, wScr * sensitivity))
@@ -114,12 +108,9 @@ while True:
             cv2.circle(img, (x1, y1), 15, (255, 0, 255), cv2.FILLED)
             plocX, plocY = clocX, clocY
 
-        # 3. 🖱️ Click Gesture: Index + Middle finger pinch
-        # This gesture check must be separate from the scroll and move checks.
         if fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 0 and fingers[4] == 0:
             length, img, lineInfo = detector.findDistance(8, 12, img)
 
-            # Check for short distance (pinch) and click cooldown
             if length < 40 and currentTime - lastClickTime > clickCooldown:
                 cv2.circle(img, (lineInfo[4], lineInfo[5]), 15, (0, 255, 0), cv2.FILLED)
                 pyautogui.click()
